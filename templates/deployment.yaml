@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.appName }}
+  namespace: helmwork
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      myobject: deploy
+
+  template:
+    metadata:
+      labels:
+        myobject: deploy
+
+    spec:
+      containers:
+        - name: web-deploy
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 30
+            successThreshold: 1
+            failureThreshold: 3
+
+          env:
+            - name: username
+              valueFrom:
+                secretKeyRef:
+                  name: secretdata
+                  key: username
+
+            - name: password
+              valueFrom:
+                secretKeyRef:
+                  name: secretdata
+                  key: password
+            - name: config_username
+              valueFrom:
+                configMapKeyRef:
+                  name: configdata
+                  key: config_username
